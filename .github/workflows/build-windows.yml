@@ -27,13 +27,32 @@ jobs:
       - name: Build executable
         run: pyinstaller --onefile --windowed --uac-admin --name AutoClicker main.py
 
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $version = "${{ github.ref_name }}" -replace '^v',''
+          } else {
+            $version = "0.0.0-dev"
+          }
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build installer
+        shell: cmd
+        run: '"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=${{ steps.version.outputs.version }} installer.iss'
+
       - uses: actions/upload-artifact@v4
         with:
           name: AutoClicker-windows
-          path: dist/AutoClicker.exe
+          path: |
+            dist/AutoClicker.exe
+            installer_output/AutoClickerSetup.exe
 
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/AutoClicker.exe
+          files: |
+            dist/AutoClicker.exe
+            installer_output/AutoClickerSetup.exe
