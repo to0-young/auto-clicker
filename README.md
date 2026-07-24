@@ -31,6 +31,7 @@ python main.py
 The Windows installer is built automatically via GitHub Actions whenever a `vX.Y.Z` tag is pushed:
 
 ```
+git push
 git tag v1.0.0
 git push --tags
 ```
