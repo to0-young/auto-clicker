@@ -10,14 +10,6 @@ import i18n
 
 
 class TrayIcon:
-    """Wraps a pystray.Icon so callers don't need to touch pystray directly.
-
-    ``get_lang`` is called each time the menu labels are drawn, so the menu
-    stays translated even if the language changes while it's hidden. The
-    ``on_show``/``on_quit`` callbacks run on pystray's own thread, not the
-    Tk thread — callers must marshal back with ``root.after(0, ...)``.
-    """
-
     def __init__(self, icon_path, get_lang, on_show, on_quit):
         image = (
             Image.open(icon_path).convert("RGBA")
