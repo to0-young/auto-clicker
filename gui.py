@@ -1,12 +1,8 @@
 """Dark-themed tkinter GUI for the auto clicker."""
 import os
 import sys
-import threading
 import tkinter as tk
 from tkinter import ttk
-
-import pystray
-from PIL import Image
 
 import i18n
 from engine import (
@@ -18,6 +14,7 @@ from engine import (
     HotkeyManager,
     PositionPicker,
 )
+from tray import TrayIcon
 
 THEMES = {
     "dark": {
@@ -158,18 +155,16 @@ class AutoClickerApp(tk.Tk):
     # ------------------------------------------------------------------ tray
     def _start_tray(self):
         icon_path = _resource_path(os.path.join("assets", "AutoClicker.ico"))
-        image = Image.open(icon_path).convert("RGBA") if os.path.exists(icon_path) else Image.new("RGBA", (32, 32), (61, 220, 132, 255))
-        menu = pystray.Menu(
-            pystray.MenuItem(lambda item: i18n.t("tray_show", self.lang), self._restore_from_tray, default=True),
-            pystray.MenuItem(lambda item: i18n.t("tray_exit", self.lang), self._quit_app),
+        self._tray_icon = TrayIcon(
+            icon_path, get_lang=lambda: self.lang,
+            on_show=self._restore_from_tray, on_quit=self._quit_app,
         )
-        self._tray_icon = pystray.Icon("AutoClicker", image, "Auto Clicker", menu=menu)
-        threading.Thread(target=self._tray_icon.run, daemon=True).start()
+        self._tray_icon.start()
 
     def _minimize_to_tray(self):
         self.withdraw()
 
-    def _restore_from_tray(self, _icon=None, _item=None):
+    def _restore_from_tray(self):
         self.after(0, self._show_window)
 
     def _show_window(self):
@@ -183,7 +178,7 @@ class AutoClickerApp(tk.Tk):
         self.after(200, lambda: self.attributes("-topmost", False))
         self.focus_force()
 
-    def _quit_app(self, _icon=None, _item=None):
+    def _quit_app(self):
         self.after(0, self._do_quit)
 
     def _do_quit(self):
