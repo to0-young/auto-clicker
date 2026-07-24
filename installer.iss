@@ -20,6 +20,7 @@ Compression=lzma
 SolidCompression=yes
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesInstallIn64BitMode=x64compatible
+SetupIconFile=assets\AutoClicker.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
