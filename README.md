@@ -34,3 +34,5 @@ The Windows installer is built automatically via GitHub Actions whenever a `vX.Y
 git tag v1.0.0
 git push --tags
 ```
+
+> `git push` only pushes commits on a branch — it does **not** push tags. If you tag a release and only run `git push`, the workflow never triggers and no new release appears. Push the tag explicitly with `git push --tags` (all tags) or `git push origin v1.0.0` (a single tag).
