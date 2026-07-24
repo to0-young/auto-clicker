@@ -147,10 +147,7 @@ class AutoClickerApp(tk.Tk):
 
         row = tk.Frame(self, bg=BG)
         row.pack(fill="x", padx=16)
-        self._standard_switch = ToggleSwitch(row, tk.BooleanVar(value=True))
-        self._standard_switch.set_enabled(False)  # always on; standard mode only
-        self._standard_switch.pack(side="left")
-        tk.Label(row, textvariable=self.var_cps, bg=BG, fg=FG, font=FONT).pack(side="left", padx=8)
+        tk.Label(row, textvariable=self.var_cps, bg=BG, fg=FG, font=FONT).pack(side="left")
 
         fields = tk.Frame(self, bg=BG)
         fields.pack(fill="x", padx=16, pady=(8, 0))
