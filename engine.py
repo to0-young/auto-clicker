@@ -23,8 +23,6 @@ class ClickType(Enum):
 class CursorMode(Enum):
     CURRENT = "Cursor Location"
     FIXED = "Fixed Location"
-    IMAGE = "Find Image"
-    COLOR = "Find Color"
 
 
 class ActionType(Enum):
@@ -97,7 +95,6 @@ class ClickerConfig:
     cursor_mode: CursorMode = CursorMode.CURRENT
     fixed_x: int = 0
     fixed_y: int = 0
-    image_path: str = ""
 
     def interval_seconds(self) -> float:
         base = self.hours * 3600 + self.minutes * 60 + self.seconds + self.milliseconds / 1000
@@ -171,23 +168,7 @@ class ClickerEngine:
             return self._mouse.position
         if config.cursor_mode == CursorMode.FIXED:
             return (config.fixed_x, config.fixed_y)
-        if config.cursor_mode == CursorMode.IMAGE:
-            return self._locate_image(config.image_path)
         return self._mouse.position
-
-    @staticmethod
-    def _locate_image(path):
-        if not path:
-            return None
-        try:
-            import pyautogui
-            box = pyautogui.locateCenterOnScreen(path, confidence=0.8)
-        except TypeError:
-            import pyautogui
-            box = pyautogui.locateCenterOnScreen(path)
-        except Exception:
-            return None
-        return box
 
     def _click(self, position, config: ClickerConfig):
         if config.cursor_mode != CursorMode.CURRENT:

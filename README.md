@@ -1,6 +1,6 @@
 # Auto Clicker
 
-A simple auto clicker for Windows with a dark UI: configurable click interval, a start/stop hotkey, fixed cursor position or image-based click targeting, and a UA / RU / EN interface language switcher.
+A simple auto clicker for Windows: configurable click interval, a start/stop hotkey, fixed or current cursor position, a UA / RU / EN interface language switcher, and a dark/light theme.
 
 ## Installation (Windows)
 
@@ -17,9 +17,10 @@ Grab the installer from the [Releases](https://github.com/to0-young/auto-clicker
 - **Interval Configuration** — time between clicks (hours/mins/secs/ms) and a random offset.
 - **Click Options** — mouse button (left/right/middle) and click type (single/double/hold).
 - **Click Repeat** — repeat a fixed number of times, or forever until stopped.
-- **Cursor Position** — click at the current cursor location, at a fixed coordinate, or by locating an image on screen.
+- **Cursor Position** — click at the current cursor location, or at a fixed coordinate.
 - The **Start/Stop** button at the bottom, or a hotkey (`F6` by default, rebindable with **Record Hotkey**).
 - Three buttons — **UA / RU / EN** — at the top of the window switch the interface language instantly.
+- **Dark / Light** buttons next to the language switcher toggle the color theme.
 
 ## Building from source (for developers)
 

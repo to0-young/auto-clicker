@@ -2,7 +2,7 @@
 import os
 import sys
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import ttk
 
 import i18n
 from engine import (
@@ -153,7 +153,7 @@ class AutoClickerApp(tk.Tk):
         icon_path = _resource_path(os.path.join("assets", "AutoClicker.ico"))
         if os.path.exists(icon_path):
             try:
-                self.iconbitmap(icon_path)
+                self.iconbitmap(default=icon_path)
             except tk.TclError:
                 pass
 
@@ -191,7 +191,6 @@ class AutoClickerApp(tk.Tk):
         self.var_cursor_mode = tk.StringVar(value=CursorMode.CURRENT.value)
         self.var_fixed_x = tk.StringVar(value="0")
         self.var_fixed_y = tk.StringVar(value="0")
-        self.var_image_path = tk.StringVar(value="")
 
         self.var_cps = tk.StringVar(value="")
         self.var_hotkey_label = tk.StringVar(value=self.hotkey.label())
@@ -453,32 +452,10 @@ class AutoClickerApp(tk.Tk):
         self._pick_btn.pack(side="left", padx=8)
         self._set_pick_state(self._pick_btn_state == "picking")
 
-        image_row = tk.Frame(self, bg=BG)
-        image_row.pack(fill="x", padx=16, pady=2)
-        self._radio_enum(image_row, self.var_cursor_mode, CursorMode.IMAGE.value)
-        browse_btn = tk.Button(
-            image_row, text=i18n.t("browse", self.lang), command=self._browse_image,
-            bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
-        )
-        browse_btn.pack(side="left", padx=8)
-        self._i18n_labels.append((browse_btn, "browse"))
-        tk.Label(image_row, textvariable=self.var_image_path, bg=BG, fg=FG_MUTED, font=FONT_SMALL).pack(
-            side="left", padx=4
-        )
-
     def _radio_full(self, value):
         row = tk.Frame(self, bg=BG)
         row.pack(fill="x", padx=16, pady=2)
         self._radio_enum(row, self.var_cursor_mode, value)
-
-    def _browse_image(self):
-        path = filedialog.askopenfilename(
-            title="Select target image",
-            filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp"), ("All files", "*.*")],
-        )
-        if path:
-            self.var_image_path.set(path)
-            self.var_cursor_mode.set(CursorMode.IMAGE.value)
 
     def _start_position_pick(self):
         self._set_pick_state(True)
@@ -567,7 +544,6 @@ class AutoClickerApp(tk.Tk):
             repeat_count=max(_int(self.var_repeat_count, 1), 1),
             cursor_mode=CursorMode(self.var_cursor_mode.get()),
             fixed_x=_int(self.var_fixed_x), fixed_y=_int(self.var_fixed_y),
-            image_path=self.var_image_path.get(),
         )
 
     def _toggle_engine(self):

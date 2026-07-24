@@ -41,7 +41,6 @@ _STRINGS = {
         "UA": "Наведи мишу, натисни Enter...",
         "RU": "Наведи мышь, нажми Enter...",
     },
-    "browse": {"EN": "Browse...", "UA": "Огляд...", "RU": "Обзор..."},
     "start": {"EN": "Start", "UA": "Старт", "RU": "Старт"},
     "stop": {"EN": "Stop", "UA": "Стоп", "RU": "Стоп"},
     "record_hotkey": {"EN": "Record Hotkey", "UA": "Записати клавішу", "RU": "Записать клавишу"},
@@ -69,8 +68,6 @@ _ENUM_STRINGS = {
         "RU": "Текущая позиция курсора",
     },
     "Fixed Location": {"EN": "Fixed Location", "UA": "Фіксована позиція", "RU": "Фиксированная позиция"},
-    "Find Image": {"EN": "Find Image", "UA": "Пошук зображення", "RU": "Поиск изображения"},
-    "Find Color": {"EN": "Find Color", "UA": "Пошук кольору", "RU": "Поиск цвета"},
 }
 
 
