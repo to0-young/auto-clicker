@@ -53,6 +53,8 @@ _STRINGS = {
     "clicking": {"EN": "Clicking...", "UA": "Клікає...", "RU": "Кликает..."},
     "theme_dark": {"EN": "Dark", "UA": "Темна", "RU": "Тёмная"},
     "theme_light": {"EN": "Light", "UA": "Світла", "RU": "Светлая"},
+    "tray_show": {"EN": "Show", "UA": "Показати", "RU": "Показать"},
+    "tray_exit": {"EN": "Exit", "UA": "Вихід", "RU": "Выход"},
 }
 
 _ENUM_STRINGS = {

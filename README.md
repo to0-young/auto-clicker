@@ -21,6 +21,7 @@ Grab the installer from the [Releases](https://github.com/to0-young/auto-clicker
 - The **Start/Stop** button at the bottom, or a hotkey (`F6` by default, rebindable with **Record Hotkey**).
 - Three buttons — **UA / RU / EN** — at the top of the window switch the interface language instantly.
 - **Dark / Light** buttons next to the language switcher toggle the color theme.
+- Closing the window (the X button) minimizes it to the system tray instead of quitting; use the tray icon's menu to show the window again or exit for good.
 
 ## Building from source (for developers)
 

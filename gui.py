@@ -1,8 +1,12 @@
 """Dark-themed tkinter GUI for the auto clicker."""
 import os
 import sys
+import threading
 import tkinter as tk
 from tkinter import ttk
+
+import pystray
+from PIL import Image
 
 import i18n
 from engine import (
@@ -147,7 +151,41 @@ class AutoClickerApp(tk.Tk):
         self._build_ui()
         self._update_cps_label()
         self._lock_window_size()
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._tray_icon = None
+        self._start_tray()
+        self.protocol("WM_DELETE_WINDOW", self._minimize_to_tray)
+
+    # ------------------------------------------------------------------ tray
+    def _start_tray(self):
+        icon_path = _resource_path(os.path.join("assets", "AutoClicker.ico"))
+        image = Image.open(icon_path).convert("RGBA") if os.path.exists(icon_path) else Image.new("RGBA", (32, 32), (61, 220, 132, 255))
+        menu = pystray.Menu(
+            pystray.MenuItem(lambda item: i18n.t("tray_show", self.lang), self._restore_from_tray, default=True),
+            pystray.MenuItem(lambda item: i18n.t("tray_exit", self.lang), self._quit_app),
+        )
+        self._tray_icon = pystray.Icon("AutoClicker", image, "Auto Clicker", menu=menu)
+        threading.Thread(target=self._tray_icon.run, daemon=True).start()
+
+    def _minimize_to_tray(self):
+        self.withdraw()
+
+    def _restore_from_tray(self, _icon=None, _item=None):
+        self.after(0, self._show_window)
+
+    def _show_window(self):
+        self.deiconify()
+        self.lift()
+        self.focus_force()
+
+    def _quit_app(self, _icon=None, _item=None):
+        self.after(0, self._do_quit)
+
+    def _do_quit(self):
+        self.engine.stop()
+        self.hotkey.stop()
+        if self._tray_icon:
+            self._tray_icon.stop()
+        self.destroy()
 
     def _set_window_icon(self):
         icon_path = _resource_path(os.path.join("assets", "AutoClicker.ico"))
@@ -560,7 +598,3 @@ class AutoClickerApp(tk.Tk):
         self._start_btn.config(bg=ACCENT_STOP if running else ACCENT)
         self._refresh_start_label()
 
-    def _on_close(self):
-        self.engine.stop()
-        self.hotkey.stop()
-        self.destroy()
