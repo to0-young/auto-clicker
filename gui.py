@@ -175,6 +175,12 @@ class AutoClickerApp(tk.Tk):
     def _show_window(self):
         self.deiconify()
         self.lift()
+        # Some Linux window managers (notably GNOME/Mutter) block programmatic
+        # focus-stealing, so the window can come back mapped yet stay behind
+        # others with no visible sign it reappeared. Toggling topmost briefly
+        # forces it to the front regardless.
+        self.attributes("-topmost", True)
+        self.after(200, lambda: self.attributes("-topmost", False))
         self.focus_force()
 
     def _quit_app(self, _icon=None, _item=None):
@@ -536,6 +542,13 @@ class AutoClickerApp(tk.Tk):
             activebackground=ACCENT, padx=12, pady=6,
         )
         self._start_btn.pack(side="left")
+
+        self._quit_btn = tk.Button(
+            row, text=i18n.t("tray_exit", self.lang), command=self._do_quit,
+            bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
+        )
+        self._quit_btn.pack(side="left", padx=(8, 0))
+        self._i18n_labels.append((self._quit_btn, "tray_exit"))
 
         self._record_btn = tk.Button(
             row, command=self._start_hotkey_record,
