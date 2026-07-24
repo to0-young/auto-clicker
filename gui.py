@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
 
+import i18n
 from engine import (
     ClickButton,
     ClickerConfig,
@@ -68,12 +69,48 @@ class ToggleSwitch(tk.Canvas):
         self.create_oval(knob_x - r + 3, 3, knob_x + r - 3, self._height - 3, fill="#f2f2f2", outline="")
 
 
+class TranslatedCombo:
+    """A readonly ttk.Combobox that shows translated labels while keeping a
+    language-independent canonical value in sync on the given StringVar."""
+
+    def __init__(self, parent, canonical_var: tk.StringVar, options, lang, style="Dark.TCombobox", width=10):
+        self._canonical_var = canonical_var
+        self._options = list(options)
+        self._display_var = tk.StringVar()
+        self.widget = ttk.Combobox(
+            parent, textvariable=self._display_var, values=[], state="readonly",
+            width=width, style=style,
+        )
+        self.widget.bind("<<ComboboxSelected>>", self._on_select)
+        self.widget.pack(anchor="w", pady=(2, 0))
+        self.refresh(lang)
+
+    def _on_select(self, _event=None):
+        idx = self.widget.current()
+        if idx >= 0:
+            self._canonical_var.set(self._options[idx])
+
+    def refresh(self, lang):
+        labels = [i18n.enum_label(o, lang) for o in self._options]
+        self.widget["values"] = labels
+        current = self._canonical_var.get()
+        idx = self._options.index(current) if current in self._options else 0
+        self._display_var.set(labels[idx])
+
+
 class AutoClickerApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Auto Clicker")
         self.configure(bg=BG)
         self.resizable(False, False)
+
+        self.lang = i18n.LANGUAGES[0]
+        self._i18n_labels = []  # (widget, string_key)
+        self._i18n_enum_labels = []  # (widget, canonical_enum_value)
+        self._i18n_combos = []  # [TranslatedCombo, ...]
+        self._pick_btn_state = "idle"
+        self._record_btn_state = "idle"
 
         self.engine = ClickerEngine(on_state_change=self._handle_engine_state)
         self.hotkey = HotkeyManager(on_trigger=self._handle_hotkey_trigger)
@@ -106,15 +143,14 @@ class AutoClickerApp(tk.Tk):
 
         self.var_cps = tk.StringVar(value="")
         self.var_hotkey_label = tk.StringVar(value=self.hotkey.label())
-        self.var_status = tk.StringVar(value="Idle")
+        self.var_status = tk.StringVar(value=i18n.t("idle", self.lang))
 
         for v in (self.var_hours, self.var_mins, self.var_secs, self.var_ms):
             v.trace_add("write", lambda *_: self._update_cps_label())
 
     # ------------------------------------------------------------------- ui
     def _build_ui(self):
-        pad = dict(padx=16, pady=(10, 4))
-
+        self._section_language()
         self._section_interval()
         self._separator()
         self._section_click_options()
@@ -128,10 +164,17 @@ class AutoClickerApp(tk.Tk):
     def _separator(self):
         tk.Frame(self, bg=BORDER, height=1).pack(fill="x", padx=16, pady=10)
 
-    def _header(self, text):
-        tk.Label(self, text=text, bg=BG, fg=FG, font=FONT_BOLD).pack(
-            anchor="w", padx=16, pady=(4, 6)
-        )
+    def _header(self, key):
+        lbl = tk.Label(self, text=i18n.t(key, self.lang), bg=BG, fg=FG, font=FONT_BOLD)
+        lbl.pack(anchor="w", padx=16, pady=(4, 6))
+        self._i18n_labels.append((lbl, key))
+        return lbl
+
+    def _label(self, parent, key, fg=FG, font=FONT, **pack_kwargs):
+        lbl = tk.Label(parent, text=i18n.t(key, self.lang), bg=BG, fg=fg, font=font)
+        lbl.pack(**pack_kwargs)
+        self._i18n_labels.append((lbl, key))
+        return lbl
 
     def _labeled_entry(self, parent, textvariable, width=4):
         e = tk.Entry(
@@ -141,9 +184,52 @@ class AutoClickerApp(tk.Tk):
         e.pack(side="left", ipady=3)
         return e
 
+    # -- Language switcher --------------------------------------------------
+    def _section_language(self):
+        row = tk.Frame(self, bg=BG)
+        row.pack(fill="x", padx=16, pady=(12, 0))
+        self._lang_buttons = {}
+        for code in i18n.LANGUAGES:
+            btn = tk.Button(
+                row, text=code, command=lambda c=code: self._set_language(c),
+                relief="flat", font=FONT_SMALL, padx=8,
+            )
+            btn.pack(side="left", padx=(0, 4))
+            self._lang_buttons[code] = btn
+        self._update_lang_buttons()
+
+    def _set_language(self, lang):
+        if lang == self.lang:
+            return
+        self.lang = lang
+        self._apply_language()
+
+    def _update_lang_buttons(self):
+        for code, btn in self._lang_buttons.items():
+            active = code == self.lang
+            btn.config(
+                bg=ACCENT if active else ENTRY_BG,
+                fg="#0f1a12" if active else FG,
+                activebackground=ACCENT if active else BORDER,
+            )
+
+    def _apply_language(self):
+        lang = self.lang
+        for widget, key in self._i18n_labels:
+            widget.config(text=i18n.t(key, lang))
+        for widget, value in self._i18n_enum_labels:
+            widget.config(text=i18n.enum_label(value, lang))
+        for combo in self._i18n_combos:
+            combo.refresh(lang)
+        self._update_cps_label()
+        self._set_pick_state(self._pick_btn_state == "picking")
+        self._set_record_state(self._record_btn_state == "recording")
+        self._apply_engine_state(self.engine.running)
+        self._update_lang_buttons()
+
     # -- Interval Configuration -------------------------------------------
     def _section_interval(self):
-        self._header("Interval Configuration")
+        self._header("interval_configuration")
 
         row = tk.Frame(self, bg=BG)
         row.pack(fill="x", padx=16)
@@ -151,20 +237,20 @@ class AutoClickerApp(tk.Tk):
 
         fields = tk.Frame(self, bg=BG)
         fields.pack(fill="x", padx=16, pady=(8, 0))
-        for var, label in (
+        for var, key in (
             (self.var_hours, "hours"), (self.var_mins, "mins"),
             (self.var_secs, "secs"), (self.var_ms, "milliseconds"),
         ):
             self._labeled_entry(fields, var)
-            tk.Label(fields, text=label, bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(4, 12))
+            self._label(fields, key, fg=FG_MUTED, font=FONT, side="left", padx=(4, 12))
 
         rnd = tk.Frame(self, bg=BG)
         rnd.pack(fill="x", padx=16, pady=(10, 0))
         self._random_switch = ToggleSwitch(rnd, self.var_random, command=self._on_random_toggle)
         self._random_switch.pack(side="left")
-        tk.Label(rnd, text="Random Offset ±", bg=BG, fg=FG, font=FONT).pack(side="left", padx=8)
+        self._label(rnd, "random_offset", side="left", padx=8)
         self._random_entry = self._labeled_entry(rnd, self.var_random_ms)
-        tk.Label(rnd, text="ms", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=4)
+        self._label(rnd, "ms", fg=FG_MUTED, font=FONT, side="left", padx=4)
         self._random_entry.config(state="disabled")
 
     def _on_random_toggle(self):
@@ -175,22 +261,22 @@ class AutoClickerApp(tk.Tk):
             hours=_int(self.var_hours), minutes=_int(self.var_mins),
             seconds=_int(self.var_secs), milliseconds=_int(self.var_ms, 100),
         )
-        self.var_cps.set(f"Standard Interval (~{cfg.cps():.2f} CPS)")
+        self.var_cps.set(i18n.t("standard_interval", self.lang, cps=cfg.cps()))
 
     # -- Click Options ------------------------------------------------------
     def _section_click_options(self):
-        self._header("Click Options")
+        self._header("click_options")
         row = tk.Frame(self, bg=BG)
         row.pack(fill="x", padx=16)
 
         col1 = tk.Frame(row, bg=BG)
         col1.pack(side="left", padx=(0, 24))
-        tk.Label(col1, text="MOUSE BUTTON", bg=BG, fg=FG_MUTED, font=FONT_SMALL).pack(anchor="w")
+        self._label(col1, "mouse_button", fg=FG_MUTED, font=FONT_SMALL, anchor="w")
         self._combo(col1, self.var_button, [b.value for b in ClickButton])
 
         col2 = tk.Frame(row, bg=BG)
         col2.pack(side="left")
-        tk.Label(col2, text="CLICK TYPE", bg=BG, fg=FG_MUTED, font=FONT_SMALL).pack(anchor="w")
+        self._label(col2, "click_type", fg=FG_MUTED, font=FONT_SMALL, anchor="w")
         self._combo(col2, self.var_click_type, [c.value for c in ClickType])
 
     def _combo(self, parent, var, values):
@@ -214,70 +300,81 @@ class AutoClickerApp(tk.Tk):
         self.option_add("*TCombobox*Listbox.foreground", FG)
         self.option_add("*TCombobox*Listbox.selectBackground", ACCENT)
         self.option_add("*TCombobox*Listbox.selectForeground", "#0f1a12")
-        cb = ttk.Combobox(
-            parent, textvariable=var, values=values, state="readonly",
-            width=10, style="Dark.TCombobox",
-        )
-        cb.pack(anchor="w", pady=(2, 0))
-        return cb
+        combo = TranslatedCombo(parent, var, values, self.lang)
+        self._i18n_combos.append(combo)
+        return combo
 
     # -- Click Repeat ---------------------------------------------------
     def _section_click_repeat(self):
-        self._header("Click Repeat")
+        self._header("click_repeat")
 
         row1 = tk.Frame(self, bg=BG)
         row1.pack(fill="x", padx=16, pady=2)
-        self._radio(row1, self.var_repeat_mode, "count", "Repeat")
+        self._radio(row1, self.var_repeat_mode, "count", "repeat")
         self._labeled_entry(row1, self.var_repeat_count)
-        tk.Label(row1, text="times", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(4, 0))
+        self._label(row1, "times", fg=FG_MUTED, font=FONT, side="left", padx=(4, 0))
 
         row2 = tk.Frame(self, bg=BG)
         row2.pack(fill="x", padx=16, pady=2)
-        self._radio(row2, self.var_repeat_mode, "forever", "Repeat until stopped")
+        self._radio(row2, self.var_repeat_mode, "forever", "repeat_until_stopped")
 
-    def _radio(self, parent, var, value, text):
+    def _radio(self, parent, var, value, key):
         rb = tk.Radiobutton(
-            parent, text=text, variable=var, value=value, bg=BG, fg=FG,
+            parent, text=i18n.t(key, self.lang), variable=var, value=value, bg=BG, fg=FG,
             selectcolor=ENTRY_BG, activebackground=BG, activeforeground=FG,
             font=FONT, highlightthickness=0,
         )
         rb.pack(side="left", padx=(0, 8))
+        self._i18n_labels.append((rb, key))
+        return rb
+
+    def _radio_enum(self, parent, var, value):
+        rb = tk.Radiobutton(
+            parent, text=i18n.enum_label(value, self.lang), variable=var, value=value, bg=BG, fg=FG,
+            selectcolor=ENTRY_BG, activebackground=BG, activeforeground=FG,
+            font=FONT, highlightthickness=0,
+        )
+        rb.pack(side="left", padx=(0, 8))
+        self._i18n_enum_labels.append((rb, value))
         return rb
 
     # -- Cursor Position --------------------------------------------------
     def _section_cursor_position(self):
-        self._header("Cursor Position")
+        self._header("cursor_position")
 
-        self._radio_full(CursorMode.CURRENT.value, "Cursor Location")
+        self._radio_full(CursorMode.CURRENT.value)
 
         fixed_row = tk.Frame(self, bg=BG)
         fixed_row.pack(fill="x", padx=16, pady=2)
-        self._radio(fixed_row, self.var_cursor_mode, CursorMode.FIXED.value, "Fixed Location")
+        self._radio_enum(fixed_row, self.var_cursor_mode, CursorMode.FIXED.value)
         tk.Label(fixed_row, text="X", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(8, 2))
         self._labeled_entry(fixed_row, self.var_fixed_x)
         tk.Label(fixed_row, text="Y", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(8, 2))
         self._labeled_entry(fixed_row, self.var_fixed_y)
         self._pick_btn = tk.Button(
-            fixed_row, text="Set Position", command=self._start_position_pick,
+            fixed_row, command=self._start_position_pick,
             bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
         )
         self._pick_btn.pack(side="left", padx=8)
+        self._set_pick_state(False)
 
         image_row = tk.Frame(self, bg=BG)
         image_row.pack(fill="x", padx=16, pady=2)
-        self._radio(image_row, self.var_cursor_mode, CursorMode.IMAGE.value, "Find Image")
-        tk.Button(
-            image_row, text="Browse...", command=self._browse_image,
+        self._radio_enum(image_row, self.var_cursor_mode, CursorMode.IMAGE.value)
+        browse_btn = tk.Button(
+            image_row, text=i18n.t("browse", self.lang), command=self._browse_image,
             bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
-        ).pack(side="left", padx=8)
+        )
+        browse_btn.pack(side="left", padx=8)
+        self._i18n_labels.append((browse_btn, "browse"))
         tk.Label(image_row, textvariable=self.var_image_path, bg=BG, fg=FG_MUTED, font=FONT_SMALL).pack(
             side="left", padx=4
         )
 
-    def _radio_full(self, value, text):
+    def _radio_full(self, value):
         row = tk.Frame(self, bg=BG)
         row.pack(fill="x", padx=16, pady=2)
-        self._radio(row, self.var_cursor_mode, value, text)
+        self._radio_enum(row, self.var_cursor_mode, value)
 
     def _browse_image(self):
         path = filedialog.askopenfilename(
@@ -289,7 +386,7 @@ class AutoClickerApp(tk.Tk):
             self.var_cursor_mode.set(CursorMode.IMAGE.value)
 
     def _start_position_pick(self):
-        self._pick_btn.config(text="Move mouse, press Enter...", state="disabled")
+        self._set_pick_state(True)
 
         def captured(pos):
             x, y = pos
@@ -301,7 +398,12 @@ class AutoClickerApp(tk.Tk):
         self.var_fixed_x.set(str(int(x)))
         self.var_fixed_y.set(str(int(y)))
         self.var_cursor_mode.set(CursorMode.FIXED.value)
-        self._pick_btn.config(text="Set Position", state="normal")
+        self._set_pick_state(False)
+
+    def _set_pick_state(self, picking: bool):
+        self._pick_btn_state = "picking" if picking else "idle"
+        key = "move_mouse_enter" if picking else "set_position"
+        self._pick_btn.config(text=i18n.t(key, self.lang), state="disabled" if picking else "normal")
 
     # -- Bottom bar ---------------------------------------------------------
     def _section_bottom_bar(self):
@@ -316,26 +418,30 @@ class AutoClickerApp(tk.Tk):
         self._start_btn.pack(side="left")
 
         self._record_btn = tk.Button(
-            row, text="Record Hotkey", command=self._start_hotkey_record,
+            row, command=self._start_hotkey_record,
             bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
         )
         self._record_btn.pack(side="right")
+        self._set_record_state(False)
 
         tk.Label(row, textvariable=self.var_status, bg=BG, fg=FG_MUTED, font=FONT_SMALL).pack(
             side="right", padx=10
         )
 
     def _start_button_text(self):
-        self._btn_text = tk.StringVar(value=f"▶ Start  [{self.var_hotkey_label.get()}]")
+        self._btn_text = tk.StringVar()
         self.var_hotkey_label.trace_add("write", lambda *_: self._refresh_start_label())
+        self._refresh_start_label()
         return self._btn_text
 
     def _refresh_start_label(self):
-        symbol = "■ Stop " if self.engine.running else "▶ Start"
-        self._btn_text.set(f"{symbol}  [{self.var_hotkey_label.get()}]")
+        running = self.engine.running
+        symbol = "■" if running else "▶"
+        text = i18n.t("stop" if running else "start", self.lang)
+        self._btn_text.set(f"{symbol} {text}  [{self.var_hotkey_label.get()}]")
 
     def _start_hotkey_record(self):
-        self._record_btn.config(text="Press any key...", state="disabled")
+        self._set_record_state(True)
 
         def captured(key):
             from engine import key_label
@@ -346,7 +452,12 @@ class AutoClickerApp(tk.Tk):
 
     def _on_hotkey_captured(self, label):
         self.var_hotkey_label.set(label)
-        self._record_btn.config(text="Record Hotkey", state="normal")
+        self._set_record_state(False)
+
+    def _set_record_state(self, recording: bool):
+        self._record_btn_state = "recording" if recording else "idle"
+        key = "press_any_key" if recording else "record_hotkey"
+        self._record_btn.config(text=i18n.t(key, self.lang), state="disabled" if recording else "normal")
 
     # ------------------------------------------------------------- actions
     def _build_config(self) -> ClickerConfig:
@@ -374,7 +485,7 @@ class AutoClickerApp(tk.Tk):
         self.after(0, lambda: self._apply_engine_state(running))
 
     def _apply_engine_state(self, running: bool):
-        self.var_status.set("Clicking..." if running else "Idle")
+        self.var_status.set(i18n.t("clicking" if running else "idle", self.lang))
         self._start_btn.config(bg=ACCENT_STOP if running else ACCENT)
         self._refresh_start_label()
 
