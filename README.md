@@ -1,16 +1,25 @@
 # Auto Clicker
 
-A simple auto clicker for Windows: configurable click interval, a start/stop hotkey, fixed or current cursor position, a UA / RU / EN interface language switcher, and a dark/light theme.
+A simple auto clicker for Windows and Linux: configurable click interval, a start/stop hotkey, fixed or current cursor position, a UA / RU / EN interface language switcher, and a dark/light theme.
 
-## Installation (Windows)
+## Installation
 
-Grab the installer from the [Releases](https://github.com/to0-young/auto-clicker/releases) page — no Python required.
+Grab a build from the [Releases](https://github.com/to0-young/auto-clicker/releases) page — no Python required.
+
+### Windows
 
 1. Download **`AutoClickerSetup.exe`** from the latest release.
 2. Run it and go through the setup wizard (you can leave the **"Create a desktop shortcut"** box checked).
 3. Done — a shortcut will appear on the desktop and in the Start menu, and an uninstaller is included.
 
 > Windows SmartScreen or your antivirus may warn about an unrecognized file — that's normal for an unsigned `.exe`. Click "More info" → "Run anyway".
+
+### Linux
+
+- **Debian / Ubuntu / Mint and similar:** download **`AutoClicker.deb`** and install it with `sudo apt install ./AutoClicker.deb` (or double-click it in a file manager that supports package installs). It adds an "Auto Clicker" entry to your applications menu with an icon, and can be removed with `sudo apt remove autoclicker`.
+- **Any other distro:** download **`AutoClicker-linux`**, mark it executable (`chmod +x AutoClicker-linux`), and run it directly.
+
+> The system tray icon needs a tray host to actually show up in. Most X11 desktop environments (XFCE, KDE, Cinnamon, MATE...) provide one out of the box; vanilla GNOME needs the "AppIndicator and KStatusNotifierItem Support" extension. On a pure Wayland session (no XWayland), global hotkeys and simulated clicks may not work at all — this is a Wayland security restriction, not a bug in the app.
 
 ## Usage
 
@@ -30,7 +39,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-The Windows installer is built automatically via GitHub Actions whenever a `vX.Y.Z` tag is pushed:
+The Windows installer and Linux package are built automatically via GitHub Actions whenever a `vX.Y.Z` tag is pushed:
 
 ```
 git push

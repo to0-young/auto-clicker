@@ -6,3 +6,5 @@ dist/
 .venv/
 venv/
 .pytest_cache/
+installer_output/
+packaging/linux/AutoClicker/

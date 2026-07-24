@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Auto Clicker
+Comment=Simple auto clicker with configurable interval and hotkey
+Exec=/opt/autoclicker/AutoClicker
+Icon=autoclicker
+Terminal=false
+Categories=Utility;

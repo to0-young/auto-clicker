@@ -188,10 +188,20 @@ class AutoClickerApp(tk.Tk):
         self.destroy()
 
     def _set_window_icon(self):
-        icon_path = _resource_path(os.path.join("assets", "AutoClicker.ico"))
-        if os.path.exists(icon_path):
+        # .ico + iconbitmap only works on Windows; .png + iconphoto is the
+        # cross-platform way and covers Linux (and Windows too, as a fallback).
+        ico_path = _resource_path(os.path.join("assets", "AutoClicker.ico"))
+        if os.path.exists(ico_path):
             try:
-                self.iconbitmap(default=icon_path)
+                self.iconbitmap(default=ico_path)
+            except tk.TclError:
+                pass
+
+        png_path = _resource_path(os.path.join("assets", "AutoClicker.png"))
+        if os.path.exists(png_path):
+            try:
+                self._icon_image = tk.PhotoImage(file=png_path)
+                self.iconphoto(True, self._icon_image)
             except tk.TclError:
                 pass
 
