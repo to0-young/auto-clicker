@@ -4,22 +4,45 @@ A simple auto clicker for Windows and Linux: configurable click interval, a star
 
 ## Installation
 
-Grab a build from the [Releases](https://github.com/to0-young/auto-clicker/releases) page — no Python required.
+Grab a build from the [Releases](https://github.com/to0-young/auto-clicker/releases) page — no Python required. Each release has three files: `AutoClickerSetup-windows.exe`, `AutoClicker.deb`, and `AutoClicker-linux`.
 
 ### Windows
 
-1. Download **`AutoClickerSetup.exe`** from the latest release.
-2. Run it and go through the setup wizard (you can leave the **"Create a desktop shortcut"** box checked).
-3. Done — a shortcut will appear on the desktop and in the Start menu, and an uninstaller is included.
+1. Download **`AutoClickerSetup-windows.exe`** from the latest release.
+2. Run it and go through the setup wizard:
+   - Choose an install location (or keep the default).
+   - Leave **"Create a desktop shortcut"** checked if you want one.
+3. Done. "Auto Clicker" is now in the Start menu (and on the desktop, if you kept the checkbox), with a proper uninstaller registered in "Add or Remove Programs".
+
+The app requests administrator rights on launch (a UAC prompt) — this is required so it can send clicks into other elevated applications (e.g. games running as admin). Confirm the prompt.
 
 > Windows SmartScreen or your antivirus may warn about an unrecognized file — that's normal for an unsigned `.exe`. Click "More info" → "Run anyway".
 
 ### Linux
 
-- **Debian / Ubuntu / Mint and similar:** download **`AutoClicker.deb`** and install it with `sudo apt install ./AutoClicker.deb` (or double-click it in a file manager that supports package installs). It adds an "Auto Clicker" entry to your applications menu with an icon, and can be removed with `sudo apt remove autoclicker`.
-- **Any other distro:** download **`AutoClicker-linux`**, mark it executable (`chmod +x AutoClicker-linux`), and run it directly.
+**Debian / Ubuntu / Mint and similar (recommended):**
+```
+wget https://github.com/to0-young/auto-clicker/releases/latest/download/AutoClicker.deb
+sudo apt install ./AutoClicker.deb
+```
+(Or just double-click the downloaded `.deb` in a file manager that supports package installs, e.g. GNOME Software / Ubuntu Software.)
 
-> The system tray icon needs a tray host to actually show up in. Most X11 desktop environments (XFCE, KDE, Cinnamon, MATE...) provide one out of the box; vanilla GNOME needs the "AppIndicator and KStatusNotifierItem Support" extension. On a pure Wayland session (no XWayland), global hotkeys and simulated clicks may not work at all — this is a Wayland security restriction, not a bug in the app.
+This installs the binary to `/opt/autoclicker` and adds an "Auto Clicker" entry with its icon to your applications menu. To remove it later:
+```
+sudo apt remove autoclicker
+```
+
+**Any other distro (Fedora, Arch, openSUSE, ...):**
+```
+wget https://github.com/to0-young/auto-clicker/releases/latest/download/AutoClicker-linux
+chmod +x AutoClicker-linux
+./AutoClicker-linux
+```
+There's no installer for this path — it's a single portable binary you run directly, from wherever you put it.
+
+> **Tray icon:** needs a tray host to actually show up in. Most X11 desktop environments (XFCE, KDE, Cinnamon, MATE...) provide one out of the box; vanilla GNOME needs the "AppIndicator and KStatusNotifierItem Support" extension installed. Without a tray host, the app still runs — you just won't see the tray icon, and closing the window will hide it with no way to reopen it until you relaunch.
+>
+> **Wayland:** on a pure Wayland session (no XWayland), global hotkeys and simulated clicks may not work at all — this is a Wayland security restriction, not a bug in the app. If clicks/hotkeys don't register, check whether your session is Wayland or X11 (`echo $XDG_SESSION_TYPE`).
 
 ## Usage
 

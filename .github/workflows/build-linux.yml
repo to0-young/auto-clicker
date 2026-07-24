@@ -1,4 +1,5 @@
 name: Build Linux package
+run-name: "🐧 Linux build — ${{ github.ref_name }}"
 
 on:
   push:
