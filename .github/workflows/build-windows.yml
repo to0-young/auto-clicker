@@ -25,7 +25,7 @@ jobs:
           pip install pyinstaller
 
       - name: Build executable
-        run: pyinstaller --onefile --windowed --uac-admin --icon=assets/AutoClicker.ico --name AutoClicker main.py
+        run: pyinstaller --onefile --windowed --uac-admin --icon=assets/AutoClicker.ico --add-data "assets/AutoClicker.ico;assets" --name AutoClicker main.py
 
       - name: Determine version
         id: version

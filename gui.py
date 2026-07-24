@@ -1,4 +1,6 @@
 """Dark-themed tkinter GUI for the auto clicker."""
+import os
+import sys
 import tkinter as tk
 from tkinter import ttk, filedialog
 
@@ -41,6 +43,13 @@ _apply_theme_colors("dark")
 FONT = ("Sans", 10)
 FONT_BOLD = ("Sans", 11, "bold")
 FONT_SMALL = ("Sans", 8)
+
+
+def _resource_path(relative_path):
+    """Resolve a path that works both when run from source and when
+    bundled by PyInstaller (which unpacks data files under sys._MEIPASS)."""
+    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
 
 def _int(var: tk.StringVar, default=0) -> int:
@@ -120,6 +129,7 @@ class AutoClickerApp(tk.Tk):
         self.title("Auto Clicker")
         self.configure(bg=BG)
         self.resizable(False, False)
+        self._set_window_icon()
 
         self.lang = i18n.LANGUAGES[0]
         self.theme = "dark"
@@ -138,6 +148,14 @@ class AutoClickerApp(tk.Tk):
         self._update_cps_label()
         self._lock_window_size()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _set_window_icon(self):
+        icon_path = _resource_path(os.path.join("assets", "AutoClicker.ico"))
+        if os.path.exists(icon_path):
+            try:
+                self.iconbitmap(icon_path)
+            except tk.TclError:
+                pass
 
     def _lock_window_size(self):
         """Fix the window to the largest size any language needs, so

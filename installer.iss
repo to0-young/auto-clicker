@@ -23,6 +23,7 @@ SolidCompression=yes
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesInstallIn64BitMode=x64compatible
 SetupIconFile=assets\AutoClicker.ico
+WizardSmallImageFile=assets\installer_small.bmp
 CloseApplications=no
 
 [Languages]
