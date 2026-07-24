@@ -12,10 +12,6 @@ Grab the installer from the [Releases](https://github.com/to0-young/auto-clicker
 
 > Windows SmartScreen or your antivirus may warn about an unrecognized file — that's normal for an unsigned `.exe`. Click "More info" → "Run anyway".
 
-## Auto clicker not working in a game (e.g. Lineage 2)
-
-Some games run with elevated privileges, and Windows blocks simulated clicks from processes without admin rights. The installed Auto Clicker requests those rights on launch (a UAC prompt will appear) — just confirm it.
-
 ## Usage
 
 - **Interval Configuration** — time between clicks (hours/mins/secs/ms) and a random offset.

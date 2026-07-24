@@ -13,14 +13,30 @@ from engine import (
     PositionPicker,
 )
 
-BG = "#1e1f22"
-PANEL = "#242529"
-FG = "#e8e8e8"
-FG_MUTED = "#9a9a9a"
-ACCENT = "#3ddc84"
-ACCENT_STOP = "#e0525a"
-ENTRY_BG = "#2c2d30"
-BORDER = "#38393d"
+THEMES = {
+    "dark": {
+        "BG": "#1e1f22", "PANEL": "#242529", "FG": "#e8e8e8", "FG_MUTED": "#9a9a9a",
+        "ACCENT": "#3ddc84", "ACCENT_STOP": "#e0525a", "ENTRY_BG": "#2c2d30", "BORDER": "#38393d",
+    },
+    "light": {
+        "BG": "#f4f4f5", "PANEL": "#ffffff", "FG": "#1c1c1e", "FG_MUTED": "#6b6b70",
+        "ACCENT": "#3ddc84", "ACCENT_STOP": "#e0525a", "ENTRY_BG": "#e7e7ea", "BORDER": "#d6d6da",
+    },
+}
+
+
+def _apply_theme_colors(name):
+    """Reassign the module-level color constants used throughout widget
+    construction, so the next UI (re)build picks up the new palette."""
+    global BG, PANEL, FG, FG_MUTED, ACCENT, ACCENT_STOP, ENTRY_BG, BORDER
+    p = THEMES[name]
+    BG, PANEL, FG, FG_MUTED, ACCENT, ACCENT_STOP, ENTRY_BG, BORDER = (
+        p["BG"], p["PANEL"], p["FG"], p["FG_MUTED"],
+        p["ACCENT"], p["ACCENT_STOP"], p["ENTRY_BG"], p["BORDER"],
+    )
+
+
+_apply_theme_colors("dark")
 
 FONT = ("Sans", 10)
 FONT_BOLD = ("Sans", 11, "bold")
@@ -106,6 +122,7 @@ class AutoClickerApp(tk.Tk):
         self.resizable(False, False)
 
         self.lang = i18n.LANGUAGES[0]
+        self.theme = "dark"
         self._i18n_labels = []  # (widget, string_key)
         self._i18n_enum_labels = []  # (widget, canonical_enum_value)
         self._i18n_combos = []  # [TranslatedCombo, ...]
@@ -119,7 +136,24 @@ class AutoClickerApp(tk.Tk):
         self._init_vars()
         self._build_ui()
         self._update_cps_label()
+        self._lock_window_size()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _lock_window_size(self):
+        """Fix the window to the largest size any language needs, so
+        switching UA/RU/EN never resizes it (translations vary in length)."""
+        self.update_idletasks()
+        max_w, max_h = self.winfo_reqwidth(), self.winfo_reqheight()
+        start_lang = self.lang
+        for lang in i18n.LANGUAGES:
+            self.lang = lang
+            self._apply_language()
+            self.update_idletasks()
+            max_w = max(max_w, self.winfo_reqwidth())
+            max_h = max(max_h, self.winfo_reqheight())
+        self.lang = start_lang
+        self._apply_language()
+        self.geometry(f"{max_w + 8}x{max_h + 4}")
 
     # ------------------------------------------------------------------ vars
     def _init_vars(self):
@@ -150,7 +184,7 @@ class AutoClickerApp(tk.Tk):
 
     # ------------------------------------------------------------------- ui
     def _build_ui(self):
-        self._section_language()
+        self._section_top_bar()
         self._section_interval()
         self._separator()
         self._section_click_options()
@@ -170,8 +204,8 @@ class AutoClickerApp(tk.Tk):
         self._i18n_labels.append((lbl, key))
         return lbl
 
-    def _label(self, parent, key, fg=FG, font=FONT, **pack_kwargs):
-        lbl = tk.Label(parent, text=i18n.t(key, self.lang), bg=BG, fg=fg, font=font)
+    def _label(self, parent, key, fg=None, font=FONT, **pack_kwargs):
+        lbl = tk.Label(parent, text=i18n.t(key, self.lang), bg=BG, fg=(FG if fg is None else fg), font=font)
         lbl.pack(**pack_kwargs)
         self._i18n_labels.append((lbl, key))
         return lbl
@@ -184,19 +218,36 @@ class AutoClickerApp(tk.Tk):
         e.pack(side="left", ipady=3)
         return e
 
-    # -- Language switcher --------------------------------------------------
-    def _section_language(self):
+    # -- Language & theme switchers -----------------------------------------
+    def _section_top_bar(self):
         row = tk.Frame(self, bg=BG)
         row.pack(fill="x", padx=16, pady=(12, 0))
+
+        lang_row = tk.Frame(row, bg=BG)
+        lang_row.pack(side="left")
         self._lang_buttons = {}
         for code in i18n.LANGUAGES:
             btn = tk.Button(
-                row, text=code, command=lambda c=code: self._set_language(c),
+                lang_row, text=code, command=lambda c=code: self._set_language(c),
                 relief="flat", font=FONT_SMALL, padx=8,
             )
             btn.pack(side="left", padx=(0, 4))
             self._lang_buttons[code] = btn
+
+        theme_row = tk.Frame(row, bg=BG)
+        theme_row.pack(side="right")
+        self._theme_buttons = {}
+        for name, key in (("dark", "theme_dark"), ("light", "theme_light")):
+            btn = tk.Button(
+                theme_row, text=i18n.t(key, self.lang), command=lambda n=name: self._set_theme(n),
+                relief="flat", font=FONT_SMALL, padx=8,
+            )
+            btn.pack(side="left", padx=(4, 0))
+            self._i18n_labels.append((btn, key))
+            self._theme_buttons[name] = btn
+
         self._update_lang_buttons()
+        self._update_theme_buttons()
 
     def _set_language(self, lang):
         if lang == self.lang:
@@ -212,6 +263,32 @@ class AutoClickerApp(tk.Tk):
                 fg="#0f1a12" if active else FG,
                 activebackground=ACCENT if active else BORDER,
             )
+
+    def _set_theme(self, theme):
+        if theme == self.theme:
+            return
+        self.theme = theme
+        _apply_theme_colors(theme)
+        self._rebuild_ui()
+
+    def _update_theme_buttons(self):
+        for name, btn in self._theme_buttons.items():
+            active = name == self.theme
+            btn.config(
+                bg=ACCENT if active else ENTRY_BG,
+                fg="#0f1a12" if active else FG,
+                activebackground=ACCENT if active else BORDER,
+            )
+
+    def _rebuild_ui(self):
+        for child in self.winfo_children():
+            child.destroy()
+        self.configure(bg=BG)
+        self._i18n_labels = []
+        self._i18n_enum_labels = []
+        self._i18n_combos = []
+        self._build_ui()
+        self._apply_engine_state(self.engine.running)
 
     def _apply_language(self):
         lang = self.lang
@@ -356,7 +433,7 @@ class AutoClickerApp(tk.Tk):
             bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
         )
         self._pick_btn.pack(side="left", padx=8)
-        self._set_pick_state(False)
+        self._set_pick_state(self._pick_btn_state == "picking")
 
         image_row = tk.Frame(self, bg=BG)
         image_row.pack(fill="x", padx=16, pady=2)
@@ -422,7 +499,7 @@ class AutoClickerApp(tk.Tk):
             bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
         )
         self._record_btn.pack(side="right")
-        self._set_record_state(False)
+        self._set_record_state(self._record_btn_state == "recording")
 
         tk.Label(row, textvariable=self.var_status, bg=BG, fg=FG_MUTED, font=FONT_SMALL).pack(
             side="right", padx=10

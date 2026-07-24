@@ -52,6 +52,8 @@ _STRINGS = {
     },
     "idle": {"EN": "Idle", "UA": "Очікування", "RU": "Ожидание"},
     "clicking": {"EN": "Clicking...", "UA": "Клікає...", "RU": "Кликает..."},
+    "theme_dark": {"EN": "Dark", "UA": "Темна", "RU": "Тёмная"},
+    "theme_light": {"EN": "Light", "UA": "Світла", "RU": "Светлая"},
 }
 
 _ENUM_STRINGS = {
