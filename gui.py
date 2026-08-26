@@ -238,8 +238,8 @@ class AutoClickerApp(tk.Tk):
         self.var_repeat_count = tk.StringVar(value="1")
 
         self.var_cursor_mode = tk.StringVar(value=CursorMode.CURRENT.value)
-        self.var_fixed_x = tk.StringVar(value="0")
-        self.var_fixed_y = tk.StringVar(value="0")
+        self._fixed_points = []
+        self._points_listvar = tk.StringVar(value=[])
 
         self.var_cps = tk.StringVar(value="")
         self.var_hotkey_label = tk.StringVar(value=self.hotkey.label())
@@ -490,16 +490,31 @@ class AutoClickerApp(tk.Tk):
         fixed_row = tk.Frame(self, bg=BG)
         fixed_row.pack(fill="x", padx=16, pady=2)
         self._radio_enum(fixed_row, self.var_cursor_mode, CursorMode.FIXED.value)
-        tk.Label(fixed_row, text="X", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(8, 2))
-        self._labeled_entry(fixed_row, self.var_fixed_x)
-        tk.Label(fixed_row, text="Y", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(8, 2))
-        self._labeled_entry(fixed_row, self.var_fixed_y)
+
+        points_row = tk.Frame(self, bg=BG)
+        points_row.pack(fill="x", padx=16, pady=(2, 0))
+        self._points_listbox = tk.Listbox(
+            points_row, listvariable=self._points_listvar, height=3, width=16,
+            bg=ENTRY_BG, fg=FG, relief="flat", highlightthickness=0, font=FONT_SMALL,
+            selectbackground=ACCENT, selectforeground="#0f1a12", activestyle="none",
+        )
+        self._points_listbox.pack(side="left")
+
+        points_btns = tk.Frame(points_row, bg=BG)
+        points_btns.pack(side="left", padx=8, fill="y")
         self._pick_btn = tk.Button(
-            fixed_row, command=self._start_position_pick,
+            points_btns, command=self._start_position_pick,
             bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
         )
-        self._pick_btn.pack(side="left", padx=8)
+        self._pick_btn.pack(fill="x", pady=(0, 4))
         self._set_pick_state(self._pick_btn_state == "picking")
+
+        remove_btn = tk.Button(
+            points_btns, text=i18n.t("remove_point", self.lang), command=self._remove_selected_point,
+            bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
+        )
+        remove_btn.pack(fill="x")
+        self._i18n_labels.append((remove_btn, "remove_point"))
 
     def _radio_full(self, value):
         row = tk.Frame(self, bg=BG)
@@ -516,14 +531,24 @@ class AutoClickerApp(tk.Tk):
         PositionPicker(on_captured=captured)
 
     def _on_position_captured(self, x, y):
-        self.var_fixed_x.set(str(int(x)))
-        self.var_fixed_y.set(str(int(y)))
+        self._fixed_points.append((int(x), int(y)))
+        self._refresh_points_listbox()
         self.var_cursor_mode.set(CursorMode.FIXED.value)
         self._set_pick_state(False)
 
+    def _remove_selected_point(self):
+        selection = self._points_listbox.curselection()
+        if not selection:
+            return
+        del self._fixed_points[selection[0]]
+        self._refresh_points_listbox()
+
+    def _refresh_points_listbox(self):
+        self._points_listvar.set([f"{i + 1}: ({x}, {y})" for i, (x, y) in enumerate(self._fixed_points)])
+
     def _set_pick_state(self, picking: bool):
         self._pick_btn_state = "picking" if picking else "idle"
-        key = "move_mouse_enter" if picking else "set_position"
+        key = "move_mouse_enter" if picking else "add_point"
         self._pick_btn.config(text=i18n.t(key, self.lang), state="disabled" if picking else "normal")
 
     # -- Bottom bar ---------------------------------------------------------
@@ -599,7 +624,7 @@ class AutoClickerApp(tk.Tk):
             repeat_forever=(self.var_repeat_mode.get() == "forever"),
             repeat_count=max(_int(self.var_repeat_count, 1), 1),
             cursor_mode=CursorMode(self.var_cursor_mode.get()),
-            fixed_x=_int(self.var_fixed_x), fixed_y=_int(self.var_fixed_y),
+            fixed_points=list(self._fixed_points),
         )
 
     def _toggle_engine(self):

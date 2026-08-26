@@ -35,7 +35,8 @@ _STRINGS = {
         "RU": "Повторять до остановки",
     },
     "cursor_position": {"EN": "Cursor Position", "UA": "Позиція курсора", "RU": "Позиция курсора"},
-    "set_position": {"EN": "Set Position", "UA": "Встановити позицію", "RU": "Установить позицию"},
+    "add_point": {"EN": "Add Point", "UA": "Додати точку", "RU": "Добавить точку"},
+    "remove_point": {"EN": "Remove", "UA": "Видалити", "RU": "Удалить"},
     "move_mouse_enter": {
         "EN": "Move mouse, press Enter...",
         "UA": "Наведи мишу, натисни Enter...",

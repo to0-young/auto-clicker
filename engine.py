@@ -1,7 +1,7 @@
 """Core clicking engine: config model, hotkey capture, and the click loop."""
 import random
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from pynput import keyboard
@@ -93,8 +93,7 @@ class ClickerConfig:
     repeat_forever: bool = True
     repeat_count: int = 1
     cursor_mode: CursorMode = CursorMode.CURRENT
-    fixed_x: int = 0
-    fixed_y: int = 0
+    fixed_points: list = field(default_factory=list)
 
     def interval_seconds(self) -> float:
         base = self.hours * 3600 + self.minutes * 60 + self.seconds + self.milliseconds / 1000
@@ -147,11 +146,14 @@ class ClickerEngine:
 
     def _run(self, config: ClickerConfig):
         count = 0
+        point_index = 0
         while not self._stop_event.is_set():
-            target = self._resolve_target(config)
+            target = self._resolve_target(config, point_index)
             if target is not None:
                 self._click(target, config)
                 count += 1
+                if config.cursor_mode == CursorMode.FIXED and config.fixed_points:
+                    point_index = (point_index + 1) % len(config.fixed_points)
                 if not config.repeat_forever and count >= config.repeat_count:
                     break
             delay = config.interval_seconds()
@@ -163,11 +165,13 @@ class ClickerEngine:
         self._running = False
         self._notify()
 
-    def _resolve_target(self, config: ClickerConfig):
+    def _resolve_target(self, config: ClickerConfig, point_index: int = 0):
         if config.cursor_mode == CursorMode.CURRENT:
             return self._mouse.position
         if config.cursor_mode == CursorMode.FIXED:
-            return (config.fixed_x, config.fixed_y)
+            if not config.fixed_points:
+                return None
+            return config.fixed_points[point_index]
         return self._mouse.position
 
     def _click(self, position, config: ClickerConfig):
