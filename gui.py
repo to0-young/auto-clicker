@@ -490,16 +490,16 @@ class AutoClickerApp(tk.Tk):
         fixed_row = tk.Frame(self, bg=BG)
         fixed_row.pack(fill="x", padx=16, pady=2)
         self._radio_enum(fixed_row, self.var_cursor_mode, CursorMode.FIXED.value)
-        tk.Label(fixed_row, text="X", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(8, 2))
-        self._labeled_entry(fixed_row, self.var_fixed_x)
-        tk.Label(fixed_row, text="Y", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(8, 2))
-        self._labeled_entry(fixed_row, self.var_fixed_y)
         self._pick_btn = tk.Button(
             fixed_row, command=self._start_position_pick,
             bg=ENTRY_BG, fg=FG, relief="flat", font=FONT_SMALL, activebackground=BORDER,
         )
         self._pick_btn.pack(side="left", padx=8)
         self._set_pick_state(self._pick_btn_state == "picking")
+        tk.Label(fixed_row, text="X", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(8, 2))
+        self._labeled_entry(fixed_row, self.var_fixed_x)
+        tk.Label(fixed_row, text="Y", bg=BG, fg=FG_MUTED, font=FONT).pack(side="left", padx=(8, 2))
+        self._labeled_entry(fixed_row, self.var_fixed_y)
 
     def _radio_full(self, value):
         row = tk.Frame(self, bg=BG)
